@@ -1,0 +1,672 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Avengers Protocol</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap">
+<style>
+:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+--bg:#0a1230;--panel:rgba(255,248,230,.9);--fg:#1b1b24;--gold:#ffb400;--red:#e0252b;--cyan:#7fe9ff}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--panel:rgba(12,16,32,.82);--fg:#fff4d6}}
+:root[data-theme="dark"]{--panel:rgba(12,16,32,.82);--fg:#fff4d6}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px);touch-action:none;overscroll-behavior:none;-webkit-tap-highlight-color:transparent;-webkit-touch-callout:none}
+body{height:100%;margin:0;overflow:hidden;background:var(--bg);color:var(--fg);font:600 15px "Manrope","Segoe UI",system-ui,sans-serif;touch-action:none;user-select:none;-webkit-user-select:none}
+canvas{position:fixed;inset:0;width:100%;height:100%;display:block}
+#hud{position:fixed;left:0;right:0;top:0;padding:calc(env(safe-area-inset-top,0px) + 12px) 16px 0;display:flex;justify-content:space-between;align-items:flex-start;pointer-events:none;color:#fff4d6;text-shadow:0 1px 6px #000}
+#score{font-size:30px;font-weight:800;letter-spacing:.04em}
+#pilotTag{font-size:13px;letter-spacing:.14em;color:#fff0c8;text-shadow:0 1px 6px #000}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at center,transparent 55%,rgba(2,6,24,.65) 100%)}
+#kl{font-size:15px;letter-spacing:.12em;color:var(--cyan);margin-top:-2px}
+#ring{--p:100;--c:#7fe9ff;width:66px;height:66px;border-radius:50%;background:conic-gradient(var(--c) calc(var(--p)*1%),rgba(255,255,255,.14) 0);display:flex;align-items:center;justify-content:center;box-shadow:0 0 16px rgba(127,233,255,.5)}
+#ring b{width:52px;height:52px;border-radius:50%;background:rgba(6,10,28,.88);display:flex;align-items:center;justify-content:center;font-size:21px}
+#healcd{position:fixed;left:16px;top:calc(env(safe-area-inset-top,0px) + 82px);color:#baffd5;font-size:14px;letter-spacing:.08em;text-shadow:0 1px 6px #000;pointer-events:none}
+#roomBadge{position:fixed;z-index:8;display:none;left:50%;top:calc(env(safe-area-inset-top,0px) + 12px);transform:translateX(-50%);padding:7px 12px;border:1px solid #78e6ff8a;border-radius:8px;background:#091528dc;color:#b8f3ff;font:700 12px "Manrope",system-ui,sans-serif;letter-spacing:.12em;pointer-events:auto;cursor:pointer}
+#boss{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 92px);transform:translateX(-50%);width:min(78vw,360px);display:none;text-align:center;color:#ff7a8a;font-size:14px;letter-spacing:.2em;text-shadow:0 1px 6px #000;pointer-events:none}
+#bb{height:10px;margin-top:4px;border:2px solid #ff4a5a;border-radius:6px;overflow:hidden;background:rgba(0,0,0,.5)}
+#bhp{height:100%;width:100%;background:linear-gradient(90deg,#ff2a55,#ffb400)}
+#warn{position:fixed;left:0;right:0;top:34%;text-align:center;font-size:26px;font-weight:800;letter-spacing:.18em;color:#ff4a5a;text-shadow:0 0 12px #ff2a55;display:none;pointer-events:none;animation:bl .4s steps(2) infinite}
+@keyframes bl{50%{opacity:.25}}
+@media (prefers-reduced-motion:reduce){#warn{animation:none}}
+#lock{position:fixed;left:0;top:0;width:60px;height:60px;display:none;pointer-events:none;border:2px solid rgba(255,74,90,.9);border-radius:50%;box-shadow:0 0 10px rgba(255,42,85,.6)}
+#ld{position:absolute;top:100%;left:50%;transform:translateX(-50%);font-style:normal;font-size:13px;color:#ff9aa5;white-space:nowrap;text-shadow:0 1px 4px #000}
+.ctl{position:fixed;bottom:calc(env(safe-area-inset-bottom,0px) + 24px);touch-action:none}
+#stick{left:24px;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.1);border:2px solid rgba(255,255,255,.35)}
+#knob{position:absolute;left:35px;top:35px;width:60px;height:60px;border-radius:50%;background:rgba(127,233,255,.55);box-shadow:0 0 14px var(--cyan);pointer-events:none}
+#fire{right:24px;width:96px;height:96px;border-radius:50%;border:3px solid var(--gold);background:radial-gradient(circle,#ffe58a,#e0252b);color:#fff;font-weight:800;font-size:17px;display:flex;align-items:center;justify-content:center;text-shadow:0 1px 3px #000}
+@media (hover:hover) and (pointer:fine){.ctl{display:none}}
+#ov{position:fixed;inset:0;display:flex;align-items:flex-end;justify-content:center;background:rgba(5,8,20,.45);padding:20px}
+#ov{z-index:5;align-items:center;background:radial-gradient(ellipse at 50% 110%,rgba(255,167,70,.19),transparent 55%),rgba(4,8,22,.68);backdrop-filter:blur(3px)}
+#card{background:linear-gradient(145deg,rgba(14,25,49,.94),rgba(9,13,31,.94));color:#f4f3ee;border:1px solid rgba(127,233,255,.42);border-radius:20px;padding:30px 28px;text-align:center;width:min(430px,calc(100vw - 44px));box-sizing:border-box;backdrop-filter:blur(14px);box-shadow:0 24px 80px #020611a8,0 0 38px #53d8ff18;position:relative;overflow:hidden}
+#card:before{content:"";position:absolute;inset:0 20% auto;height:1px;background:linear-gradient(90deg,transparent,var(--cyan),transparent)}
+#t{margin:0 0 6px;font-size:clamp(31px,8vw,42px);letter-spacing:.14em;color:#fff;text-shadow:0 0 22px #79dfff38}
+#t,#gate h1,#mpCard h2{font-family:"Space Grotesk","Manrope",system-ui,sans-serif}
+#m{margin:6px 0 16px;font-weight:500;line-height:1.4}
+#m{color:#c2cfdf;line-height:1.55}
+#go{font:800 19px "Manrope",system-ui,sans-serif;padding:12px 30px;border:1px solid #ffd479;border-radius:11px;background:linear-gradient(180deg,#ffe4a0,#e7a63b);color:#231807;cursor:pointer;box-shadow:0 8px 24px #ffbd4c22;transition:transform .18s,filter .18s}
+#go:hover{transform:translateY(-2px);filter:brightness(1.08)}
+#backMenu{display:none;margin:12px auto 0;padding:8px 14px;border:1px solid #52708c;border-radius:8px;background:transparent;color:#b7c8d8;font:700 13px "Manrope",system-ui,sans-serif;letter-spacing:.1em;cursor:pointer}
+#gate{position:fixed;z-index:50;inset:0;display:grid;place-items:center;padding:22px;box-sizing:border-box;background:radial-gradient(ellipse at 50% 38%,#1736579c,transparent 50%),rgba(3,7,18,.95);backdrop-filter:blur(18px)}
+#gatecard{width:min(390px,100%);box-sizing:border-box;padding:34px 28px 28px;text-align:center;color:#f4f3ee;border:1px solid #7fe9ff55;border-radius:22px;background:linear-gradient(145deg,#101b31ed,#080d1ced);box-shadow:0 28px 90px #0009,0 0 45px #5bdfff18;position:relative}
+#gatecard:before{content:"";display:block;width:42px;height:42px;margin:0 auto 18px;border:1px solid #7fe9ff90;border-radius:50%;box-shadow:inset 0 0 0 6px #7fe9ff12,0 0 24px #7fe9ff2b;background:radial-gradient(circle,#d5faff 0 3px,#7fe9ff 4px,transparent 12px)}
+#gkicker{font-size:11px;letter-spacing:.28em;color:#8feaff}
+#gate h1{margin:8px 0;font-size:32px;letter-spacing:.12em}
+#gate p{margin:0 auto 20px;color:#aabbd0;line-height:1.5;max-width:290px}
+#pass{width:172px;box-sizing:border-box;text-align:center;padding:11px 14px;border-radius:10px;border:1px solid #7990a8;background:#080e1b;color:white;font:700 26px "Manrope",system-ui,sans-serif;letter-spacing:.5em;padding-left:calc(14px + .5em);outline:none}
+#pass:focus{border-color:#7fe9ff;box-shadow:0 0 0 3px #7fe9ff20}
+#unlock{display:block;width:100%;margin-top:14px;padding:12px;border:1px solid #6cdaf3;border-radius:10px;background:linear-gradient(180deg,#1e556a,#153344);color:#e9fbff;font:800 16px "Manrope",system-ui,sans-serif;letter-spacing:.13em;cursor:pointer}
+#gateMsg{height:20px;margin-top:12px;color:#ff9aa5;font-size:14px}
+#pilotInput{display:block;width:min(260px,100%);box-sizing:border-box;margin:14px auto 12px;padding:10px 13px;border-radius:9px;border:1px solid #56718e;background:#0b1424;color:#fff;font:600 17px "Manrope",system-ui,sans-serif;letter-spacing:.06em;outline:none}
+#pilotInput:focus{border-color:#7fe9ff;box-shadow:0 0 0 3px #7fe9ff20}
+.kicker{font-size:11px;letter-spacing:.28em;color:#8feaff;margin-bottom:8px}
+#abil{right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 136px);display:grid;grid-template-columns:repeat(3,58px);gap:8px}
+.ab{--r:0;width:58px;height:58px;border-radius:14px;border:2px solid var(--cyan);color:#fff;font:800 12px "Manrope",system-ui,sans-serif;background:linear-gradient(to top,rgba(0,0,0,.72) calc(var(--r)*100%),rgba(20,60,90,.55) 0);touch-action:none}
+#suits{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin:0 0 14px}
+.hero-picks{display:flex;gap:7px;justify-content:center;margin:15px 0 10px;flex-wrap:wrap}
+.hero-pick{position:relative;z-index:6;touch-action:manipulation;font:700 14px "Manrope",system-ui,sans-serif;padding:8px 12px;border-radius:9px;border:1px solid #56718e;background:#111c31;color:#cfdeed;cursor:pointer;pointer-events:auto}
+.hero-pick.on{border-color:#7fe9ff;color:#f0fcff;background:#18394b;box-shadow:0 0 18px #6de3ff22}
+#progressInfo{min-height:18px;margin:0 0 9px;color:#8fa4bb;font-size:12px;letter-spacing:.1em}
+.sb{font:700 14px "Manrope",system-ui,sans-serif;padding:6px 10px;border-radius:9px;border:2px solid var(--gold);background:transparent;color:var(--fg);cursor:pointer}
+.sb.on{background:var(--gold);color:#2a1200}
+#online{margin:10px 0 0;padding:10px 18px;border:1px solid #7396b4;border-radius:10px;background:#101d31;color:#d4e4f2;font:700 16px "Manrope",system-ui,sans-serif;letter-spacing:.08em;cursor:pointer}
+#mpPanel{position:fixed;z-index:20;inset:0;display:none;place-items:center;padding:20px;box-sizing:border-box;background:#030817dd;backdrop-filter:blur(12px)}
+#mpCard{width:min(460px,100%);padding:25px;box-sizing:border-box;color:#eff7ff;background:linear-gradient(145deg,#14233a,#090f20);border:1px solid #6edcf477;border-radius:18px;box-shadow:0 28px 80px #000b}
+#mpCard h2{margin:0 0 10px;letter-spacing:.12em}
+.mpInput,.mpSelect{width:100%;box-sizing:border-box;margin:5px 0;padding:10px 12px;border:1px solid #526c87;border-radius:8px;background:#08111f;color:#eff7ff;font:600 15px "Manrope",system-ui,sans-serif}
+.mpRow{display:flex;gap:8px;margin-top:8px}.mpRow button{flex:1;padding:10px 8px;border:1px solid #6486a4;border-radius:8px;background:#152941;color:#eff8ff;font:700 14px "Manrope",system-ui,sans-serif;cursor:pointer}
+#roomCode{font-size:25px;letter-spacing:.24em;color:#8feaff;text-align:center;margin:12px}
+#netStatus{min-height:22px;color:#9ab1c8;font-size:14px}
+#netPlayers{margin:8px 0;padding:0;list-style:none}.netPlayer{padding:8px 10px;margin:5px 0;border:1px solid #293d56;border-radius:8px;background:#0c1728;color:#dce8f4}
+#closeMp{float:right;border:0;background:none;color:#aabbd0;font-size:20px;cursor:pointer}
+#fatalError{display:none;position:fixed;z-index:100;inset:16px;place-content:center;padding:26px;box-sizing:border-box;border:1px solid #ff7180;border-radius:18px;background:rgba(7,12,25,.97);color:#fff;text-align:center;font:600 16px/1.6 "Manrope",system-ui,sans-serif;white-space:pre-wrap;overflow-wrap:anywhere;word-break:break-word;max-width:calc(100vw - 32px)}
+</style>
+</head>
+<body>
+<div id="hud"><div><div id="score">0</div><div id="kl">BOSSES 0/5</div><div id="pilotTag">AVENGER</div></div><div id="ring"><b id="hpn">100</b></div></div>
+<div id="healcd">HEAL READY · +30 HP</div>
+<button id="roomBadge">CO-OP ROOM</button>
+<div id="boss"><span id="bn"></span><div id="bb"><div id="bhp"></div></div></div>
+<div id="warn">WARNING: BOSS INBOUND</div>
+<div id="lock"><i id="ld"></i></div>
+<div class="ctl" id="stick"><div id="knob"></div></div>
+<div class="ctl" id="fire">FIRE</div>
+<div class="ctl" id="abil"><button class="ab">MSL</button><button class="ab">BEAM</button><button class="ab">SHLD</button><button class="ab">NANO</button><button class="ab">HEAL</button></div>
+<div id="ov"><div id="card"><div class="kicker">EARTH DEFENSE INITIATIVE · 3 OPERATIVES</div><h1 id="t">AVENGERS PROTOCOL</h1><p id="m">Choose your hero and step into a five-mission campaign.<br><br><b>WASD</b> to move · <b>Space</b> to attack · <b>1–5</b> abilities <span id="boostHint">· <b>Shift</b> to boost</span></p><div id="heroes" class="hero-picks"></div><div id="suits"></div><div id="progressInfo"></div><input id="pilotInput" maxlength="18" autocomplete="nickname" aria-label="Your callsign" placeholder="Enter your callsign"><button id="go">BEGIN CAMPAIGN</button><button id="backMenu">CHANGE OPERATIVE</button><br><button id="online">ONLINE CO-OP · UP TO 3 OPERATIVES</button><div style="margin-top:15px;font-size:11px;letter-spacing:.16em;color:#8fa4bb">15 HOSTILE SIGNALS · 3 CAMPAIGNS</div></div></div>
+<div id="mpPanel"><div id="mpCard"><button id="closeMp" aria-label="Close multiplayer">×</button><h2>SECURE CO-OP ROOM</h2><p style="color:#aebfd0;line-height:1.5">If this page is hosted with the multiplayer server, leave Server Address blank. Host creates a room and shares the code; friends join with that code. Everyone readies up, then the host starts.</p><input id="wsUrl" class="mpInput" placeholder="Leave blank to use this hosted game" aria-label="Multiplayer server address"><input id="mpPin" class="mpInput" inputmode="numeric" maxlength="4" value="2043" aria-label="Access code"><div class="mpRow"><button id="createRoom">CREATE ROOM</button></div><div class="mpRow"><input id="joinCode" class="mpInput" maxlength="6" placeholder="ROOM CODE"><button id="joinRoom">JOIN ROOM</button></div><div id="roomCode"></div><div id="netStatus" aria-live="polite">Enter the four-digit access code to connect.</div><select id="netHero" class="mpSelect" aria-label="Choose your multiplayer character"><option value="iron">Iron Man</option><option value="cap">Captain America</option><option value="thor">Thor</option></select><ul id="netPlayers"></ul><div class="mpRow"><button id="readyRoom">READY</button><button id="startRoom">START MISSION</button></div><div class="mpRow"><button id="copyInvite">COPY INVITE LINK</button><button id="endRoom">END ROOM</button></div></div></div>
+<div id="gate"><form id="gatecard"><div id="gkicker">SECURE ACCESS · FRIENDS ONLY</div><h1>AVENGERS PROTOCOL</h1><p>Enter your four-digit access code to open the command interface.</p><input id="pass" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" aria-label="Four digit access code" placeholder="••••" required><button id="unlock" type="submit">VERIFY ACCESS</button><div id="gateMsg" aria-live="polite"></div></form></div>
+<div id="fatalError" role="alert" aria-live="assertive"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" onerror="document.getElementById('fatalError').textContent='3D ENGINE FAILED TO LOAD. Check your internet connection, then reload Avengers Protocol. The game uses Three.js from cdnjs.';document.getElementById('fatalError').style.display='grid'"></script>
+<script>
+const $=id=>{const node=document.getElementById(id);if(!node)throw new Error('Avengers Protocol is missing required page element #'+id);return node};
+addEventListener('error',e=>{const box=$('fatalError');if(!box)return;const engine=e.target?.tagName==='SCRIPT'&&e.target.src.includes('three.js');const where=e.filename?`${e.filename.split('/').pop()}:${e.lineno||'?'}:${e.colno||'?'}`:'startup';const detail=e.error?.stack||`${e.message||'Unknown error'}\nAt ${where}`;box.textContent=engine?'3D ENGINE FAILED TO LOAD. Check your internet connection, then reload Avengers Protocol. The game uses Three.js from cdnjs.':'GAME STARTUP ERROR\n'+detail+'\nReload the page. If the problem continues, send this full message to the developer.';box.style.display='grid'});
+const SKY=0x0a1230,scene=new THREE.Scene();
+const sc=document.createElement('canvas');sc.width=2;sc.height=256;const sg=sc.getContext('2d'),gr=sg.createLinearGradient(0,0,0,256);
+gr.addColorStop(0,'#030916');gr.addColorStop(.55,'#09294a');gr.addColorStop(.85,'#115c78');gr.addColorStop(1,'#3ea9bb');sg.fillStyle=gr;sg.fillRect(0,0,2,256);
+scene.background=new THREE.CanvasTexture(sc);scene.fog=new THREE.Fog(0x102c49,70,380);
+const hc=document.createElement('canvas');hc.width=hc.height=64;const hx=hc.getContext('2d'),hg=hx.createRadialGradient(32,32,0,32,32,32);
+hg.addColorStop(0,'rgba(255,255,255,1)');hg.addColorStop(.3,'rgba(255,255,255,.45)');hg.addColorStop(1,'rgba(255,255,255,0)');hx.fillStyle=hg;hx.fillRect(0,0,64,64);
+const HT=new THREE.CanvasTexture(hc),hm=c=>new THREE.SpriteMaterial({map:HT,color:c,blending:THREE.AdditiveBlending,transparent:true,depthWrite:false}),SC=hm(0x7fe9ff),SO=hm(0xff7a30),SR=hm(0xff2a55);
+const CAPS=[0x7fe9ff,0xff3fa4,0xffb400].map(c=>new THREE.MeshBasicMaterial({color:c}));
+const sa=new Float32Array(1200);for(let i=0;i<1200;i+=3){sa[i]=(Math.random()-.5)*900;sa[i+1]=40+Math.random()*300;sa[i+2]=(Math.random()-.5)*900}
+const stg=new THREE.BufferGeometry();stg.setAttribute('position',new THREE.BufferAttribute(sa,3));
+const stars=new THREE.Points(stg,new THREE.PointsMaterial({color:0xffffff,size:2,sizeAttenuation:false,fog:false}));scene.add(stars);
+const cam=new THREE.PerspectiveCamera(72,1,.1,600);
+const ren=new THREE.WebGLRenderer({antialias:true});
+ren.setPixelRatio(Math.min(devicePixelRatio,2));ren.outputEncoding=THREE.sRGBEncoding;ren.setClearColor(0x07162b,1);document.body.prepend(ren.domElement);
+function resize(){ren.setSize(innerWidth,innerHeight);cam.aspect=innerWidth/innerHeight;cam.updateProjectionMatrix()}
+addEventListener('resize',resize);resize();
+scene.add(new THREE.HemisphereLight(0x8fb4ff,0x1a1020,.9));
+const sun=new THREE.DirectionalLight(0xffe0b0,.8);sun.position.set(30,60,20);scene.add(sun);
+const grid=new THREE.GridHelper(900,90,0x2e6bff,0x1c2a66);scene.add(grid);
+const gnd=new THREE.Mesh(new THREE.PlaneGeometry(900,900),new THREE.MeshBasicMaterial({color:0x060a1c}));
+gnd.rotation.x=-Math.PI/2;gnd.position.y=-.05;scene.add(gnd);
+try{const pm=new THREE.PMREMGenerator(ren),es=new THREE.Scene();
+  es.add(new THREE.Mesh(new THREE.SphereGeometry(50,24,16),new THREE.MeshBasicMaterial({map:new THREE.CanvasTexture(sc),side:THREE.BackSide})));
+  [[0xffffff,20,30,20],[0xffa060,-30,10,-20],[0x7fe9ff,0,-20,30]].forEach(([c,x,y,z])=>{const l=new THREE.Mesh(new THREE.PlaneGeometry(40,8),new THREE.MeshBasicMaterial({color:c,side:THREE.DoubleSide}));l.position.set(x,y,z);l.lookAt(0,0,0);es.add(l)});
+  scene.environment=pm.fromScene(es,.02).texture}catch(e){}
+
+// Hero: red and gold armor from primitives
+const M=(c,m,r,e)=>new THREE.MeshStandardMaterial({color:c,metalness:m,roughness:r,emissive:e||0});
+const RED=M(0xc9151c,.7,.3),GOLD=M(0xf2b52a,.85,.22,0x3a2400);
+const glowM=new THREE.MeshBasicMaterial({color:0x9ff3ff}),fireM=new THREE.MeshBasicMaterial({color:0xffa030});
+const hero=new THREE.Group(),body=new THREE.Group();hero.add(body);scene.add(hero);
+const P=hero.position;P.set(0,18,0);
+const part=(w,h,d,m,x,y,z)=>{const o=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),m);o.position.set(x,y,z);body.add(o)};
+part(1.1,1.4,.6,RED,0,0,0);part(.7,.5,.64,GOLD,0,.15,0);part(.62,.62,.62,GOLD,0,1.1,0);
+const hands=[],flames=[];
+[-1,1].forEach(s=>{
+  part(.3,1.2,.3,RED,s*.75,.8,0);part(.34,.36,.34,GOLD,s*.75,1.55,0);
+  const h=new THREE.Mesh(new THREE.SphereGeometry(.22,10,8),glowM);h.position.set(s*.75,1.85,0);body.add(h);hands.push(h);const hh=new THREE.Sprite(SC);hh.scale.setScalar(1.6);h.add(hh);
+  part(.42,1.3,.42,RED,s*.28,-1.3,0);part(.46,.4,.46,GOLD,s*.28,-2.05,0);
+  const f=new THREE.Mesh(new THREE.ConeGeometry(.2,1.2,8),fireM);f.rotation.x=Math.PI;f.position.set(s*.28,-2.8,0);body.add(f);flames.push(f);const fh=new THREE.Sprite(SO);fh.scale.setScalar(2.6);fh.position.set(s*.28,-2.9,0);body.add(fh);
+});
+body.rotation.x=-1.25;const pl=new THREE.PointLight(0xffa050,1.3,70);pl.position.set(0,-2,4);hero.add(pl);
+const SUITS=[
+ {n:'MARK I',a:0x8a8f98,b:0x4b4f58,g:0xcfe8ff,hp:140,st:.8,rate:.22,d:1},
+ {n:'MARK 42',a:0xb3121a,b:0xe8a82a,g:0x9ff3ff,hp:100,st:1.15,rate:.14,d:1},
+ {n:'MARK III',a:0x9e0f14,b:0xf2b52a,g:0xbff6ff,hp:110,st:1,rate:.17,d:1.5},
+ {n:'COBALT',a:0x1f4fd8,b:0xc9d6ff,g:0x7fe9ff,hp:90,st:1.3,rate:.15,d:1.2},
+ {n:'MARK 85',a:0x7a0c14,b:0xd9a21f,g:0x6ff0ff,hp:130,st:1.1,rate:.12,d:1.5,nano:1}];
+let SU=SUITS[0],heroType='iron';
+const HEROES=[{id:'iron',name:'IRON MAN',desc:'Flight · repulsors · energy beam'},{id:'cap',name:'CAPTAIN AMERICA',desc:'Shield throws · grounded defense · close combat'},{id:'thor',name:'THOR',desc:'Grounded thunder · Mjolnir · lightning'}];
+const maxHealth=()=>onlineMode?(heroType==='cap'?125:heroType==='thor'?145:100):(heroType==='cap'?125:heroType==='thor'?145:SU.hp);
+const ball=(r,m,x,y,z)=>{const o=new THREE.Mesh(new THREE.SphereGeometry(r,10,8),m);o.position.set(x,y,z);body.add(o)};
+const NB=140,nbP=new Float32Array(NB*3),nbA=Array.from({length:NB},()=>({a:Math.random()*6.28,y:Math.random()*5-2.5,r:1.2+Math.random()*1.6,s:2+Math.random()*3})),nbG=new THREE.BufferGeometry();
+nbG.setAttribute('position',new THREE.BufferAttribute(nbP,3));
+const nanos=new THREE.Points(nbG,new THREE.PointsMaterial({color:0x7dffb0,size:5,sizeAttenuation:false,blending:THREE.AdditiveBlending,transparent:true,depthWrite:false}));
+nanos.visible=false;nanos.frustumCulled=false;hero.add(nanos);
+const cyl=(a,b,h,m,x,y,z)=>{const o=new THREE.Mesh(new THREE.CylinderGeometry(a,b,h,12),m);o.position.set(x,y,z);body.add(o);return o};
+const sph=(r,m,x,y,z,sx,sy,sz)=>{const o=new THREE.Mesh(new THREE.SphereGeometry(r,14,10),m);o.position.set(x,y,z);o.scale.set(sx||1,sy||1,sz||1);body.add(o);return o};
+function buildSuit(i){
+  SU=SUITS[i];while(body.children.length)body.remove(body.children[0]);hands.length=flames.length=0;
+  const A=M(heroType==='cap'?0x174b9b:heroType==='thor'?0x303b4a:SU.a,.7,i===0?.5:.2),B=M(heroType==='cap'?0xc93643:heroType==='thor'?0xd2a94d:SU.b,.8,.18),D=M(heroType==='cap'?0x182b4d:0x1d2028,.7,.45),G=new THREE.MeshBasicMaterial({color:heroType==='cap'?0xf0f3f5:heroType==='thor'?0x73d9ff:SU.g});
+  body.rotation.set(0,0,0);
+  if(heroType==='cap'){
+    const blue=M(0x123a78,.55,.28),navy=M(0x0b1a32,.45,.42),red=M(0xc92d43,.5,.3),white=M(0xe9f2ff,.25,.25),silver=M(0xbac9da,.85,.2),glow=new THREE.MeshBasicMaterial({color:0x74caff});
+    // Grounded field suit: helmet, armored torso, utility belt, boots, and a front-facing vibranium shield.
+    sph(.78,blue,0,1.55,0,.86,1.12,.82);part(.48,.16,.18,white,0,2.14,.54);part(.12,.22,.1,white,-.54,1.62,.34);part(.12,.22,.1,white,.54,1.62,.34);
+    cyl(.6,.74,1.75,blue,0,.05,0).scale.z=.78;part(1.05,.28,.66,navy,0,-.96,0);part(1.02,.28,.72,B,0,-1.26,0);
+    // Distinct white chest star and segmented red/white lower torso.
+    const star=new THREE.Mesh(new THREE.IcosahedronGeometry(.42,0),white);star.position.set(0,.42,.59);body.add(star);
+    for(let n=0;n<3;n++)part(.78,.12,.12,n%2?white:red,0,-.25-n*.19,.54);
+    [-1,1].forEach(side=>{sph(.38,blue,side*.83,.57,0,1,.9,1);cyl(.2,.17,.82,blue,side*.9,.6,.04);cyl(.22,.19,.34,red,side*.9,.13,.04);cyl(.25,.22,.38,navy,side*.32,-1.88,0);part(.54,.28,.84,red,side*.32,-2.18,.16);hands.push(new THREE.Group());hands[hands.length-1].position.set(side*.9,.38,.56);body.add(hands[hands.length-1]);});
+    part(1.3,.22,.78,silver,0,-1.05,.04);
+    const shieldGroup=new THREE.Group();shieldGroup.position.set(-1.36,.72,.55);body.add(shieldGroup);
+    const disc=new THREE.Mesh(new THREE.CylinderGeometry(.79,.79,.16,40),silver);disc.rotation.x=Math.PI/2;shieldGroup.add(disc);
+    [0xc83243,0xf3f6fc,0xc83243].forEach((c,n)=>{const ring=new THREE.Mesh(new THREE.TorusGeometry(.65-n*.16,.075,10,40),new THREE.MeshStandardMaterial({color:c,metalness:.55,roughness:.24}));ring.position.z=.095;shieldGroup.add(ring)});
+    const core=new THREE.Mesh(new THREE.CircleGeometry(.23,32),new THREE.MeshBasicMaterial({color:0x184b9b}));core.position.z=.1;shieldGroup.add(core);
+    const shieldStar=new THREE.Mesh(new THREE.IcosahedronGeometry(.15,0),white);shieldStar.position.z=.15;shieldGroup.add(shieldStar);
+    body.scale.setScalar(.9);return;
+  }
+  if(heroType==='thor'){
+    const steel=M(0x9eabbc,.88,.22),darkSteel=M(0x33445b,.78,.26),leather=M(0x422936,.22,.62),gold=M(0xd6ad59,.82,.22),lightning=new THREE.MeshBasicMaterial({color:0x74ddff,emissive:0x2b8eff});
+    // Asgardian armor silhouette with beard, winged helm, rune discs, cape and Mjolnir.
+    sph(.78,steel,0,1.55,0,.9,1.04,.85);sph(.58,leather,0,1.16,.42,1,.78,.55);
+    part(.42,.15,.16,gold,0,2.18,.48);
+    [-1,1].forEach(side=>{const wing=new THREE.Mesh(new THREE.ConeGeometry(.24,.95,6),gold);wing.position.set(side*.66,1.72,-.03);wing.rotation.z=side*.72;body.add(wing)});
+    cyl(.67,.78,1.72,darkSteel,0,.05,0).scale.z=.8;part(1.08,.35,.76,steel,0,.56,.02);
+    [-1,1].forEach(side=>{const disc=new THREE.Mesh(new THREE.CylinderGeometry(.25,.25,.12,20),gold);disc.rotation.x=Math.PI/2;disc.position.set(side*.43,.5,.45);body.add(disc);const rune=new THREE.Mesh(new THREE.CircleGeometry(.16,20),lightning);rune.position.set(side*.43,.5,.52);body.add(rune)});
+    part(1.1,.32,.74,gold,0,-1.05,.02);
+    [-1,1].forEach(side=>{sph(.42,steel,side*.87,.55,0,1,.95,1);cyl(.23,.2,.92,steel,side*.96,.5,.02);sph(.24,leather,side*.96,.04,.02);cyl(.27,.22,.35,leather,side*.32,-1.85,0);part(.55,.3,.9,darkSteel,side*.32,-2.16,.12);const h=new THREE.Group();h.position.set(side*.96,.18,.5);body.add(h);hands.push(h);cyl(.23,.21,.8,steel,side*.32,-2.75,0)});
+    const cape=new THREE.Mesh(new THREE.BoxGeometry(1.65,3.45,.16),M(0x792638,.38,.42));cape.position.set(0,-.12,-.56);body.add(cape);
+    // Mjolnir at Thor's right hand, with a luminous head and leather-wrapped handle.
+    const hammer=new THREE.Group(),handle=new THREE.Mesh(new THREE.CylinderGeometry(.105,.105,1.1,10),leather),head=new THREE.Mesh(new THREE.BoxGeometry(.82,.62,.62),steel),cap=new THREE.Mesh(new THREE.BoxGeometry(.86,.12,.66),gold);
+    handle.position.y=-.18;head.position.y=.48;cap.position.y=.8;hammer.add(handle,head,cap);hammer.position.set(1.26,.15,.5);hammer.rotation.z=-.18;body.add(hammer);
+    body.scale.setScalar(.9);return;
+  }
+  cyl(.62,.42,1.6,A,0,.1,0).scale.z=.72;
+  part(.95,.7,.2,B,0,.5,-.42);
+  const ar=new THREE.Mesh(new THREE.TorusGeometry(.2,.05,8,16),B);ar.position.set(0,.5,-.54);body.add(ar);
+  const ad=new THREE.Mesh(new THREE.CircleGeometry(.17,16),G);ad.position.set(0,.5,-.55);ad.rotation.y=Math.PI;body.add(ad);
+  [-.6,-.85,-1.1].forEach(y=>part(.78,.2,.55,D,0,y,0));part(1,.4,.7,B,0,-1.35,0);
+  cyl(.2,.2,.3,D,0,.95,0);sph(.4,A,0,1.3,0,1,1.1,1.05);part(.5,.55,.1,B,0,1.28,-.36);
+  part(.16,.05,.05,G,-.12,1.35,-.42);part(.16,.05,.05,G,.12,1.35,-.42);
+  part(.8,1,.38,D,0,.1,.56);part(.5,.07,.1,G,0,.45,.76);part(.5,.07,.1,G,0,.2,.76);
+  [-1,1].forEach(s=>{
+    sph(.5,A,s*.95,.72,0,1,.8,1);cyl(.17,.15,.8,A,s*1.05,1.15,0);sph(.19,D,s*1.05,1.57,0);
+    cyl(.16,.2,.8,A,s*1.05,2,0);cyl(.23,.2,.4,B,s*1.05,2.35,0);cyl(.19,.19,.06,G,s*1.05,2.58,0);
+    const h=new THREE.Mesh(new THREE.SphereGeometry(.2,10,8),glowM);h.position.set(s*1.05,2.65,0);body.add(h);hands.push(h);
+    const hh=new THREE.Sprite(SC);hh.scale.setScalar(1.6);h.add(hh);
+    cyl(.25,.2,.9,A,s*.3,-2,0);sph(.21,D,s*.3,-2.5,0);cyl(.2,.16,.95,A,s*.3,-3,0);part(.4,.55,.6,B,s*.3,-3.7,.05);cyl(.14,.18,.1,G,s*.3,-4.02,0);
+    const f=new THREE.Mesh(new THREE.ConeGeometry(.2,1.2,8),fireM);f.rotation.x=Math.PI;f.position.set(s*.3,-4.65,0);body.add(f);flames.push(f);
+    const fh=new THREE.Sprite(SO);fh.scale.setScalar(2.6);fh.position.set(s*.3,-4.7,0);body.add(fh);
+    if(i===1||i===3)part(.08,1.3,.8,B,s*1.35,.5,.3);
+    if(SU.nano){part(.05,1.2,.05,G,s*1.05,2,-.17);part(.05,1.2,.05,G,s*.3,-2.5,-.22)}
+  });
+  if(heroType==='cap'){
+    // Star and concentric vibranium shield mounted on the left forearm.
+    const star=new THREE.Mesh(new THREE.IcosahedronGeometry(.29,0),new THREE.MeshBasicMaterial({color:0xffffff}));star.position.set(0,.35,-.52);body.add(star);
+    const disc=new THREE.Mesh(new THREE.CylinderGeometry(.68,.68,.16,24),new THREE.MeshStandardMaterial({color:0xb7c2d4,metalness:.8,roughness:.22}));disc.rotation.x=Math.PI/2;disc.position.set(-1.55,.62,.25);body.add(disc);
+    [0xc8323e,0xf0f3f5,0xc8323e].forEach((c,n)=>{const r=new THREE.Mesh(new THREE.TorusGeometry(.55-n*.14,.07,6,24),new THREE.MeshBasicMaterial({color:c}));r.position.set(-1.55,.62,.35);body.add(r)});
+  }else if(heroType==='thor'){
+    const cape=new THREE.Mesh(new THREE.BoxGeometry(1.35,3.3,.12),M(0x8d1f35,.35,.42));cape.position.set(0,-.3,.72);body.add(cape);
+    [-1,1].forEach(s=>{const wing=new THREE.Mesh(new THREE.ConeGeometry(.15,.8,5),B);wing.position.set(s*.48,1.43,0);wing.rotation.z=s*.9;body.add(wing)});
+    const hammer=new THREE.Group(),shaft=new THREE.Mesh(new THREE.CylinderGeometry(.1,.1,.95,8),M(0x674832,.2,.65)),head=new THREE.Mesh(new THREE.BoxGeometry(.75,.48,.52),M(0xbac6d2,.85,.18));shaft.rotation.z=Math.PI/2;head.position.x=.48;hammer.add(shaft,head);hammer.position.set(1.35,1.1,-.15);body.add(hammer);
+  }
+  body.scale.setScalar(.85);
+}
+function buildSuitOld(i){
+  SU=SUITS[i];while(body.children.length)body.remove(body.children[0]);hands.length=flames.length=0;
+  const A=M(SU.a,.85,.25),B=M(SU.b,.9,.2),G=new THREE.MeshBasicMaterial({color:SU.g});
+  part(1.2,1.5,.7,A,0,0,0);part(.84,.55,.76,B,0,.4,0);part(.34,.34,.1,G,0,.3,-.4);
+  part(.9,1,.4,B,0,.1,.55);part(.5,.07,.1,G,0,.45,.76);part(.5,.07,.1,G,0,.2,.76);
+  part(.66,.66,.66,B,0,1.15,0);part(.5,.1,.1,G,0,1.2,-.34);
+  [-1,1].forEach(s=>{
+    ball(.42,B,s*.85,.62,0);part(.32,1.2,.32,A,s*.82,.85,0);part(.38,.4,.38,B,s*.82,1.6,0);
+    const h=new THREE.Mesh(new THREE.SphereGeometry(.22,10,8),glowM);h.position.set(s*.82,1.9,0);body.add(h);hands.push(h);
+    const hh=new THREE.Sprite(SC);hh.scale.setScalar(1.6);h.add(hh);
+    part(.44,1.3,.44,A,s*.3,-1.35,0);part(.5,.42,.5,B,s*.3,-2.1,0);
+    const f=new THREE.Mesh(new THREE.ConeGeometry(.2,1.2,8),fireM);f.rotation.x=Math.PI;f.position.set(s*.3,-2.85,0);body.add(f);flames.push(f);
+    const fh=new THREE.Sprite(SO);fh.scale.setScalar(2.6);fh.position.set(s*.3,-2.95,0);body.add(fh);
+    if(i===1||i===3)part(.08,1.3,.8,B,s*1.0,.1,.3);
+    if(SU.nano){part(.05,1.2,.05,G,s*.82,.85,-.17);part(.05,1.2,.05,G,s*.3,-1.35,-.23)}
+  });
+}
+buildSuit(0);
+const beam=new THREE.Mesh(new THREE.CylinderGeometry(1.3,1.3,300,12,1,true),new THREE.MeshBasicMaterial({color:0xbff6ff,transparent:true,opacity:.75,blending:THREE.AdditiveBlending,depthWrite:false}));
+beam.rotation.x=Math.PI/2;beam.visible=false;scene.add(beam);
+const shield=new THREE.Mesh(new THREE.IcosahedronGeometry(4.4,1),new THREE.MeshBasicMaterial({color:0x7fe9ff,wireframe:true,transparent:true,opacity:.7,blending:THREE.AdditiveBlending}));
+shield.visible=false;hero.add(shield);
+
+// City
+const tc=document.createElement('canvas');tc.width=tc.height=64;const g=tc.getContext('2d');
+g.fillStyle='#121a36';g.fillRect(0,0,64,64);
+for(let y=0;y<8;y++)for(let x=0;x<8;x++)if(Math.random()<.4){g.fillStyle=Math.random()<.7?'#ffd479':'#7fe9ff';g.fillRect(x*8+2,y*8+2,4,4)}
+const tex=new THREE.CanvasTexture(tc);tex.wrapS=tex.wrapT=THREE.RepeatWrapping;
+const BM=new THREE.MeshStandardMaterial({map:tex,emissiveMap:tex,emissive:0xffffff,emissiveIntensity:.9,roughness:.9});
+const bl=[],ROWS=22,GAP=22;
+for(let i=0;i<ROWS;i++)for(const s of[-1,1]){
+  const w=10+Math.random()*12,h=25+Math.random()*100,geo=new THREE.BoxGeometry(w,h,GAP-3),uv=geo.attributes.uv;
+  for(let k=0;k<uv.count;k++)uv.setXY(k,uv.getX(k)*w/8,uv.getY(k)*h/8);
+  const m=new THREE.Mesh(geo,BM),cap=new THREE.Mesh(new THREE.BoxGeometry(w+.5,.7,GAP-2.5),CAPS[i%3]);cap.position.y=h/2;m.add(cap);m.position.set(s*(24+w/2+Math.random()*14),h/2,-i*GAP+40);scene.add(m);bl.push(m);
+}
+
+// Game state
+let state='menu',score=0,kills=0,hp=100,dist=0,spd=45,cd=0,shake=0,firing=false,vx=0,vy=0,spawnT=0,best=0,sx=0,sy=0;
+let pilotName='AVENGER';
+let onlineSocket=null,onlineMode=false,onlineStarted=false,localPlayerId=null,onlineRoomState=null,lastMoveSend=0,onlineBlocking=false,netErrorMessage='';
+const remotePlayers=new Map();
+try{best=+localStorage.getItem('rr_best')||0}catch(e){}
+const bolts=[],foes=[],fx=[],keys={},_v=new THREE.Vector3();
+let boss=null,nextBoss=10,bossLv=0,shT=0,bm=0,healT=0,healCd=0,defeatedBosses=[];const HEAL_AMOUNT=30,HEAL_COOLDOWN=12,eb=[],rg=$('ring'),lk=$('lock'),cds=[0,0,0,0,0],CDM=[5,8,9,12,HEAL_COOLDOWN],ab=document.querySelectorAll('.ab'),_w=new THREE.Vector3();
+const healHealth=(current,max,amount=HEAL_AMOUNT)=>Math.max(0,Math.min(max,current+amount));
+const hurt=n=>{if(onlineMode)return;if(state==='play'&&shT<=0){hp=Math.max(0,hp-n);shake=.4}};
+function use(i){
+  if(state!=='play'||cds[i]>0)return;
+  if(i===4){if(hp<=0||hp>=maxHealth()||healCd>0)return;if(onlineMode){netSend({type:'attack',ability:'heal'});healCd=HEAL_COOLDOWN;cds[i]=HEAL_COOLDOWN;return}hp=healHealth(hp,maxHealth());healCd=HEAL_COOLDOWN;cds[i]=HEAL_COOLDOWN;healT=.65;return}
+  cds[i]=CDM[i];
+  if(onlineMode)netSend({type:'attack',ability:i===2?'shield':'special'});
+  if(i===0){const pool=boss?foes.concat(boss.m):foes.slice();
+    hands.forEach((h,k)=>{for(let j=0;j<3;j++){const p=new THREE.Vector3();h.getWorldPosition(p);const b=new THREE.Mesh(bG,glowM);b.scale.set(1.4,1.4,5);b.position.copy(p);
+      const hs=new THREE.Sprite(SO);hs.scale.setScalar(3);b.add(hs);
+      b.userData={v:new THREE.Vector3((j-1)*14+(k?6:-6),8,-spd*1.3),d:3,m:1,tgt:pool.length?pool[(k*3+j)%pool.length]:null};scene.add(b);bolts.push(b)}})}
+  if(i===1&&heroType==='cap'){
+    const reach=24;let hits=0;
+    if(!onlineMode&&boss&&boss.m.position.distanceTo(P)<reach){boss.hp-=32;hits++;if(boss.hp<=0)killBoss()}
+    for(let j=foes.length-1;j>=0;j--)if(foes[j].position.distanceTo(P)<reach){boom(foes[j].position,0xdbeaff,1.2);scene.remove(foes[j]);foes.splice(j,1);kills++;hits++}
+    if(!hits)shake=.2;else shake=.45;
+  }else if(i===1){bm=heroType==='thor'?1.15:.9;beam.material.color.set(heroType==='thor'?0x79dfff:0xbff6ff);shake=.5}
+  if(i===2)shT=onlineMode&&heroType==='thor'?2.2:3.2;
+  if(i===3){boom(P,0x9ff3ff,16);shake=.6;
+    for(let j=foes.length-1;j>=0;j--)if(foes[j].position.distanceTo(P)<110){boom(foes[j].position,0xffb04a,1.2);scene.remove(foes[j]);foes.splice(j,1);kills++}
+    eb.forEach(b=>scene.remove(b));eb.length=0;if(!onlineMode&&boss){boss.hp-=heroType==='thor'?34:heroType==='cap'?28:20;if(boss.hp<=0)killBoss()}}
+}
+const dG=new THREE.IcosahedronGeometry(1.4,0),dM=M(0x2b3150,.9,.3,0x240040),eG=new THREE.SphereGeometry(.5,8,6),
+  eM=new THREE.MeshBasicMaterial({color:0xff2a55}),rG=new THREE.TorusGeometry(2.2,.12,6,20),bG=new THREE.SphereGeometry(.28,8,6);
+function spawn(){
+  const d=new THREE.Group(),A=M(0x4a505c,.7,.3),D=M(0x1c1f27,.7,.45),V=new THREE.MeshBasicMaterial({color:0xff2a3a});
+  const mk=(g,m,x,y,z)=>{const o=new THREE.Mesh(g,m);o.position.set(x,y,z);d.add(o);return o},cy=(a,b,h)=>new THREE.CylinderGeometry(a,b,h,10),bx=(w,h,e)=>new THREE.BoxGeometry(w,h,e),sp=r=>new THREE.SphereGeometry(r,10,8);
+  mk(cy(1.1,.8,2.4),A,0,0,0).scale.z=.7;mk(bx(1.5,.5,1),D,0,-1.4,0);
+  mk(sp(.65),A,0,1.8,0).scale.set(1,1.05,1.05);mk(bx(.95,.22,.2),V,0,1.85,.62);
+  const vh=new THREE.Sprite(SR);vh.scale.setScalar(2.6);vh.position.set(0,1.85,.85);d.add(vh);
+  for(const s of[-1,1]){
+    mk(sp(.55),A,s*1.45,1,0);mk(cy(.3,.25,1.8),A,s*1.5,.2,.9).rotation.x=Math.PI/2;
+    mk(cy(.4,.3,1.7),D,s*.55,-2.4,0);
+    const f=mk(new THREE.ConeGeometry(.32,1.5,8),fireM,s*.55,-3.9,0);f.rotation.x=Math.PI;
+  }
+  mk(bx(.35,.35,1.6),D,1.5,.2,2.1);
+  const bk=new THREE.Sprite(SO);bk.scale.setScalar(3);bk.position.set(0,-3.9,0);d.add(bk);
+  d.position.set((Math.random()*2-1)*20,heroType==='iron'?5+Math.random()*34:4+Math.random()*4,P.z-260);scene.add(d);foes.push(d);
+}
+function spawnOld(){
+  const d=new THREE.Group();d.add(new THREE.Mesh(dG,dM));
+  const e=new THREE.Mesh(eG,eM);e.position.z=1.2;d.add(e);const dh=new THREE.Sprite(SR);dh.scale.setScalar(3);dh.position.z=1.2;d.add(dh);
+  const r=new THREE.Mesh(rG,eM);r.name='r';d.add(r);
+  d.position.set((Math.random()*2-1)*20,5+Math.random()*34,P.z-260);scene.add(d);foes.push(d);
+}
+function fire(){
+  const shooters=heroType==='iron'?hands:[hands[0]];
+  shooters.forEach(h=>{
+    const p=new THREE.Vector3();h.getWorldPosition(p);
+    let b;
+    if(heroType==='cap'){
+      b=new THREE.Group();const disc=new THREE.Mesh(new THREE.CylinderGeometry(.82,.82,.18,20),new THREE.MeshStandardMaterial({color:0xd9e0e9,metalness:.85,roughness:.18}));disc.rotation.x=Math.PI/2;b.add(disc);
+      [0xc8323e,0xf3f2ed,0xc8323e].forEach((c,j)=>{const r=new THREE.Mesh(new THREE.TorusGeometry(.64-j*.16,.075,6,20),new THREE.MeshBasicMaterial({color:c}));r.position.z=.13;b.add(r)});
+    }else if(heroType==='thor'){
+      b=new THREE.Group();const handle=new THREE.Mesh(new THREE.CylinderGeometry(.12,.12,1.5,8),M(0x755333,.1,.7));handle.rotation.z=Math.PI/2;const head=new THREE.Mesh(new THREE.BoxGeometry(.9,.62,.7),M(0xadbaca,.85,.18));head.position.x=.65;b.add(handle,head);
+    }else{b=new THREE.Mesh(bG,glowM);b.scale.set(1,1,6);const hs=new THREE.Sprite(SC);hs.scale.setScalar(2.6);b.add(hs)}
+    b.position.copy(p);
+    const d=new THREE.Vector3(0,0,-1);let nd=1e9,t=null;
+    (boss?foes.concat(boss.m):foes).forEach(f=>{const dz=p.z-f.position.z;if(dz>5&&dz<nd){nd=dz;t=f}});
+    if(t){const a=t.position.clone().sub(p).normalize();if(a.z<-.92)d.lerp(a,.7).normalize()}
+    b.userData={v:d.multiplyScalar(spd+(heroType==='cap'?115:heroType==='thor'?145:130)),d:heroType==='cap'?9:heroType==='thor'?13:SU.d};scene.add(b);bolts.push(b);
+  });
+  if(onlineMode)netSend({type:'attack',ability:'attack'});
+}
+function boom(p,c,s){
+  const m=new THREE.Sprite(hm(c));
+  m.position.copy(p);m.userData={t:0,s};scene.add(m);fx.push(m);
+}
+const bossM=M(0x3a1030,.9,.3,0x400018),ebG=new THREE.SphereGeometry(.9,8,6);
+const BOSS_ROSTERS={
+ iron:[
+  {n:'IRON MONGER',shape:'heavy',hp:70,rate:1.7,off:[-10,0,10],c:0xff533c,spd:.55,dmg:14},
+  {n:'WHIPLASH',shape:'whip',hp:85,rate:1.1,off:[-7,7],c:0xffb020,spd:1.4,dmg:12},
+  {n:'ALDRICH KILLIAN',shape:'fire',hp:134,rate:1.25,off:[-12,0,12],c:0xff542b,spd:1.1,dmg:15},
+  {n:'ULTRON',shape:'machine',hp:176,rate:1.15,off:[-16,-8,0,8,16],c:0xff334f,spd:1,dmg:16,mn:1},
+  {n:'THANOS',shape:'cosmic',hp:238,rate:1.55,off:[-18,-9,0,9,18],c:0xb050ff,spd:.7,dmg:20,sz:1.5,mn:2}],
+ cap:[
+  {n:'RED SKULL',shape:'skull',hp:75,rate:1.6,off:[-12,0,12],c:0xff3737,spd:.75,dmg:13},
+  {n:'WINTER SOLDIER',shape:'soldier',hp:97,rate:1.05,off:[-9,9],c:0xa9bbd5,spd:1.35,dmg:14},
+  {n:'CROSSBONES',shape:'crossbones',hp:134,rate:1.2,off:[-12,0,12],c:0xffd850,spd:1.15,dmg:16},
+  {n:'ARNIM ZOLA',shape:'hydra',hp:181,rate:1.05,off:[-16,-8,0,8,16],c:0x53da7c,spd:.95,dmg:16,mn:1},
+  {n:'BARON ZEMO',shape:'masked',hp:223,rate:1.45,off:[-18,-9,0,9,18],c:0xa36be8,spd:.85,dmg:18,mn:1}],
+ thor:[
+  {n:'THE DESTROYER',shape:'destroyer',hp:80,rate:1.8,off:[-10,0,10],c:0xff7d44,spd:.5,dmg:15},
+  {n:'LOKI',shape:'trickster',hp:107,rate:1.05,off:[-9,0,9],c:0x7bff9a,spd:1.4,dmg:14},
+  {n:'MALEKITH',shape:'darkelf',hp:144,rate:1.2,off:[-12,0,12],c:0xb8b4c9,spd:1.05,dmg:16},
+  {n:'HELA',shape:'queen',hp:186,rate:1.05,off:[-16,-8,0,8,16],c:0x60ff94,spd:.9,dmg:18,mn:1},
+  {n:'GORR THE GOD BUTCHER',shape:'beast',hp:233,rate:1.35,off:[-18,-9,0,9,18],c:0xdfdaff,spd:.85,dmg:20,sz:1.35,mn:1}]
+};
+const bossRoster=()=>BOSS_ROSTERS[heroType];
+const bossGrounded=()=>onlineMode?onlineRoomState?.campaignHero!=='iron':heroType!=='iron';
+function eshoot(p){
+  const T=boss.T;
+  T.off.forEach(o=>{
+    const b=new THREE.Mesh(ebG,boss.om),z=T.sz||1;b.scale.setScalar(z);b.position.copy(p);
+    const hs=new THREE.Sprite(boss.sm);hs.scale.setScalar(6*z);b.add(hs);
+    b.userData={v:new THREE.Vector3(P.x+o,P.y,P.z-spd*.9).sub(p).normalize().multiplyScalar(95),d:T.dmg};scene.add(b);eb.push(b);
+  });
+  for(let k=0;k<(T.mn||0);k++)spawn();
+}
+function eshootOld(p){
+  (bossLv>1?[-16,-8,0,8,16]:[-10,0,10]).forEach(o=>{
+    const b=new THREE.Mesh(ebG,eM);b.position.copy(p);const hs=new THREE.Sprite(SO);hs.scale.setScalar(6);b.add(hs);
+    b.userData.v=new THREE.Vector3(P.x+o,P.y,P.z-spd*.9).sub(p).normalize().multiplyScalar(95);scene.add(b);eb.push(b);
+  });
+}
+function spawnBoss(forcedBoss=null){
+  const roster=bossRoster();if(state!=='play'||boss||(!forcedBoss&&bossLv>=roster.length))return;
+  const T=forcedBoss||roster[bossLv],d=new THREE.Group(),sp=[];
+  const mk=(g,m,x,y,z)=>{const o=new THREE.Mesh(g,m);o.position.set(x,y,z);d.add(o);return o},bx=(w,h,dd)=>new THREE.BoxGeometry(w,h,dd),sph=r=>new THREE.SphereGeometry(r,10,8);
+  const dark=M(0x30343e,.9,.35),eye=new THREE.MeshBasicMaterial({color:T.c});
+  if(T.shape==='heavy'){const bz=M(0x6d5a48,.8,.4);
+    mk(bx(10,11,7),bz,0,0,0);mk(bx(5,4,4),dark,0,7.5,0);mk(sph(2.6),bz,-7,4.5,0);mk(sph(2.6),bz,7,4.5,0);
+    mk(bx(4,9,4),bz,-8,-2,2);mk(bx(4,9,4),bz,8,-2,2);mk(bx(3,.8,.5),eye,0,7.6,2.1);mk(sph(1.4),eye,0,0,3.7);
+  }else if(T.shape==='whip'){
+    mk(bx(5,10,3),dark,0,0,0);mk(bx(3,3,3),dark,0,6.5,0);mk(bx(2.6,.5,.5),eye,0,6.7,1.6);mk(sph(1.3),eye,0,0,2);
+    for(const s of[-1,1])sp.push([mk(new THREE.TorusGeometry(7,.3,6,24,4.2),eye,s*8,0,0),'z',s*3]);
+  }else if(T.shape==='machine'||T.shape==='destroyer'||T.shape==='crossbones') {const mt=M(T.shape==='crossbones'?0x333b49:0x9aa0aa,.9,.25);
+    mk(bx(6,9,4),mt,0,0,0);mk(new THREE.SphereGeometry(2.4,12,10),mt,0,6.5,0);mk(bx(3.6,.6,.6),eye,0,6.7,2.1);
+    mk(bx(14,1,3),dark,0,3,-1.5);mk(sph(1.4),eye,0,0,2.4);sp.push([mk(new THREE.TorusGeometry(8,.25,6,28),eye,0,0,0),'z',1.5]);
+  }else if(T.shape==='queen'||T.shape==='darkelf'||T.shape==='trickster') {const dark=M(T.shape==='darkelf'?0x30374a:0x101820,.7,.25),green=M(T.shape==='trickster'?0x315d45:0x17633d,.65,.25),antler=M(T.shape==='trickster'?0xc1a44e:0x9bcf91,.6,.3);
+    mk(bx(6,10,4),dark,0,0,0);mk(new THREE.SphereGeometry(2.3,12,10),green,0,6.5,0);mk(bx(3.6,.6,.5),eye,0,6.8,2.05);
+    mk(bx(4.8,1,2),green,0,3.8,0);
+    [-1,1].forEach(s=>{const a=mk(new THREE.ConeGeometry(.9,7,5),antler,s*3.5,10.2,0);a.rotation.z=-s*.5;mk(bx(2.2,8,3),dark,s*6,-1,0)})
+  }else if(T.shape==='cosmic'||T.shape==='beast'||T.shape==='fire') {const pu=M(T.shape==='fire'?0x8a2c1f:0x5b2a8a,.6,.5),gd=M(0xe0a820,.9,.25);
+    mk(bx(11,12,7),pu,0,0,0);mk(bx(4.4,4.4,4),pu,0,8,0);mk(bx(11.4,2,7.4),gd,0,2,0);mk(bx(5,.7,.6),eye,0,8.2,2.1);
+    mk(bx(4,8,4),pu,-8,0,0);mk(sph(2.6),gd,8,-1,3);mk(sph(1.4),eye,0,2,3.8);
+    if(T.shape==='cosmic')[0xff3040,0x40ff70,0x40a0ff,0xffe040].forEach((c,j)=>mk(sph(.45),new THREE.MeshBasicMaterial({color:c}),6.5+j*.9,-1,5.4));
+    if(T.shape==='beast'||T.shape==='fire'){[-1,1].forEach(s=>{const horn=mk(new THREE.ConeGeometry(1,6,6),eye,s*5,9,0);horn.rotation.z=-s*.55});}
+  }else {const A=M(T.c,.5,.35),B=M(0x252834,.6,.3);
+    mk(new THREE.SphereGeometry(4.2,12,10),A,0,2,0);mk(bx(8,7,5),B,0,-2,0);mk(bx(4,.8,1),eye,0,4,3);
+    [-1,1].forEach(s=>{mk(bx(2,9,3),A,s*5,-2,0);mk(new THREE.ConeGeometry(.7,3,6),eye,s*3,7,0)});
+  }
+  const h=new THREE.Sprite(hm(T.c));h.scale.setScalar(12);h.position.z=3;d.add(h);
+  d.position.set(0,bossGrounded()?8:24,P.z-260);scene.add(d);
+  const h0=forcedBoss?T.hp:T.hp+12*bossLv;boss={m:d,hp:h0,max:h0,t:0,ft:2,chargeAt:5,chargeLeft:0,chargeHit:false,T,sp,om:new THREE.MeshBasicMaterial({color:T.c}),sm:hm(T.c)};
+  $('boss').style.display='block';$('bhp').style.width='100%';$('bn').textContent=T.n;
+  const w=$('warn');w.style.display='block';setTimeout(()=>w.style.display='none',2200);
+}
+function spawnBossOld(){
+  const d=new THREE.Group();d.add(new THREE.Mesh(new THREE.IcosahedronGeometry(5,1),bossM));
+  const c=new THREE.Mesh(new THREE.SphereGeometry(1.7,12,10),eM);c.position.z=4.4;d.add(c);
+  const h=new THREE.Sprite(SR);h.scale.setScalar(14);h.position.z=4.4;d.add(h);
+  for(let i=0;i<2;i++){const r=new THREE.Mesh(new THREE.TorusGeometry(8+i*2.5,.28,6,28),eM);r.name='r'+i;r.rotation.x=1.1*i;d.add(r)}
+  d.position.set(0,24,P.z-260);scene.add(d);
+  const hp0=60+30*bossLv;boss={m:d,hp:hp0,max:hp0,t:0,ft:2};
+  $('boss').style.display='block';$('bhp').style.width='100%';
+  const w=$('warn');w.style.display='block';setTimeout(()=>w.style.display='none',2200);
+}
+function killBoss(){
+  if(!boss||state!=='play')return;
+  const defeatedName=boss.T.n;
+  for(let i=0;i<6;i++)boom(boss.m.position.clone().add(new THREE.Vector3((Math.random()-.5)*10,(Math.random()-.5)*8,(Math.random()-.5)*10)),i%2?0xffb04a:0xff3040,3);
+  scene.remove(boss.m);boss=null;bossLv++;defeatedBosses.push(defeatedName);kills+=10;nextBoss=kills+12;hp=Math.min(maxHealth(),hp+30);$('boss').style.display='none';
+  foes.concat(bolts,eb).forEach(o=>scene.remove(o));foes.length=bolts.length=eb.length=0;
+  try{localStorage.setItem('avengers_protocol_'+heroType,JSON.stringify({defeated:defeatedBosses,completed:bossLv>=bossRoster().length}))}catch(e){}
+  const roster=bossRoster();
+  hideSetupUi();
+  if(bossLv>=roster.length){state='ending';$('t').textContent='CAMPAIGN COMPLETE';$('m').textContent='The city is safe. '+HEROES.find(h=>h.id===heroType).name+' defeated all '+defeatedBosses.length+' bosses. Your score: '+score+'.';$('go').textContent='PLAY AGAIN';$('backMenu').style.display='inline-block';$('ov').style.display='flex'}
+  else{state='mission';$('t').textContent='MISSION COMPLETE';$('m').textContent=roster[bossLv-1].n+' defeated. Reward: +30 HP. Next: '+roster[bossLv].n+'.';$('go').textContent='NEXT MISSION';$('ov').style.display='flex'}
+}
+function lock(){
+  let t=null,nd=1e9;
+  (boss?foes.concat(boss.m):foes).forEach(f=>{const dz=P.z-f.position.z;if(dz>5&&dz<nd){nd=dz;t=f}});
+  if(!t||state!=='play'){lk.style.display='none';return}
+  _v.copy(t.position).project(cam);
+  if(_v.z>1){lk.style.display='none';return}
+  const s=Math.max(36,Math.min(120,2400/nd));
+  lk.style.display='block';lk.style.width=lk.style.height=s+'px';
+  lk.style.transform='translate('+((_v.x*.5+.5)*innerWidth)+'px,'+((-_v.y*.5+.5)*innerHeight)+'px) translate(-50%,-50%)';
+  $('ld').textContent=Math.round(nd)+'m';
+}
+function start(){
+  if(state==='mission'){$('ov').style.display='none';state='play';spawnT=1;return}
+  if(state==='welcome'||state==='briefing'){$('ov').style.display='none';state='play';spawnT=1;return}
+  foes.concat(bolts,eb,boss?[boss.m]:[]).forEach(o=>scene.remove(o));foes.length=bolts.length=eb.length=0;boss=null;nextBoss=10;bossLv=0;$('boss').style.display='none';
+  P.x=0;P.y=heroType==='iron'?18:5.5;hp=maxHealth();kills=0;defeatedBosses=[];cds.fill(0);shT=0;bm=0;healT=0;healCd=0;hero.rotation.set(0,0,0);dist=0;vx=vy=0;spawnT=1;pilotName=$('pilotInput').value.trim().slice(0,18)||'AVENGER';$('pilotTag').textContent=pilotName.toUpperCase();hideSetupUi();state='welcome';$('t').textContent='WELCOME, '+pilotName.toUpperCase();$('m').textContent='Mission 01 · First Contact. '+HEROES.find(h=>h.id===heroType).desc+'. Defeat '+bossRoster()[0].n+' to secure your first sector, then advance through the five-mission campaign.';$('go').textContent='DEPLOY';$('ov').style.display='flex';
+}
+function over(){
+  state='over';
+  try{if(score>best){best=score;localStorage.setItem('rr_best',best)}}catch(e){}
+  hideSetupUi();$('t').textContent='SUIT DOWN';$('m').textContent='Score '+score+'. Best '+best+'.';$('backMenu').style.display='inline-block';
+  $('go').textContent='RELAUNCH';$('ov').style.display='flex';
+}
+$('go').onclick=start;
+function hideSetupUi(){if($('heroes'))$('heroes').style.display='none';if($('suits'))$('suits').style.display='none';if($('pilotInput'))$('pilotInput').style.display='none';if($('online'))$('online').style.display='none';if($('backMenu'))$('backMenu').style.display='none'}
+function showMainMenu(){if(onlineSocket&&onlineSocket.readyState<2)onlineSocket.close();onlineMode=false;onlineStarted=false;onlineRoomState=null;localPlayerId=null;clearRemotePlayers();state='menu';$('mpPanel').style.display='none';$('t').textContent='AVENGERS PROTOCOL';$('m').textContent='Choose a hero for a five-mission campaign. Iron Man flies; Captain America and Thor fight from the ground. WASD to move, Space to attack, and 1–5 for abilities.';$('go').textContent='BEGIN CAMPAIGN';$('backMenu').style.display='none';$('heroes').style.display='flex';$('suits').style.display=heroType==='iron'?'flex':'none';$('pilotInput').style.display='block';$('online').style.display='inline-block';updateProgress();$('ov').style.display='flex'}
+$('backMenu').onclick=showMainMenu;
+const gate=$('gate'),pass=$('pass');
+$('mpPanel').style.display='none';$('roomBadge').style.display='none';
+$('gatecard').addEventListener('submit',e=>{e.preventDefault();if(pass.value==='2043'){gate.style.display='none';$('go').focus()}else{$('gateMsg').textContent='ACCESS DENIED · CHECK THE FOUR DIGITS';pass.value='';pass.focus()}});
+
+function netSend(message){if(onlineSocket&&onlineSocket.readyState===WebSocket.OPEN)onlineSocket.send(JSON.stringify(message))}
+function clearRemotePlayers(){for(const r of remotePlayers.values()){scene.remove(r.group);r.group.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>{if(m.map)m.map.dispose();m.dispose()})}})}remotePlayers.clear()}
+function drawRemotePlayers(players){
+  const present=new Set(players.map(p=>p.id));
+  for(const [id,r] of remotePlayers)if(!present.has(id)){scene.remove(r.group);r.group.traverse(o=>{if(o.geometry)o.geometry.dispose();if(o.material){const ms=Array.isArray(o.material)?o.material:[o.material];ms.forEach(m=>{if(m.map)m.map.dispose();m.dispose()})}});remotePlayers.delete(id)}
+  players.forEach(p=>{
+    if(p.id===localPlayerId){hp=p.hp;onlineBlocking=Boolean(p.blocking);shield.visible=onlineBlocking||shT>0;return}
+    let r=remotePlayers.get(p.id);
+    if(!r){
+      const g=new THREE.Group(),colors={iron:0xb82a30,cap:0x315da8,thor:0x9d293b},mat=new THREE.MeshStandardMaterial({color:colors[p.hero]||0x8ba6b9,metalness:.5,roughness:.3});
+      const torso=new THREE.Mesh(new THREE.BoxGeometry(1.8,2.8,1.1),mat);torso.position.y=.2;g.add(torso);
+      const head=new THREE.Mesh(new THREE.SphereGeometry(.72,12,9),new THREE.MeshStandardMaterial({color:0xd7e1eb,metalness:.3}));head.position.y=2.15;g.add(head);
+      if(p.hero==='cap'){const sh=new THREE.Mesh(new THREE.CylinderGeometry(.62,.62,.12,16),new THREE.MeshStandardMaterial({color:0xe3e7ed,metalness:.8}));sh.rotation.x=Math.PI/2;sh.position.set(-1.2,.5,.5);g.add(sh)}
+      if(p.hero==='thor'){const hammer=new THREE.Mesh(new THREE.BoxGeometry(.75,.4,.45),new THREE.MeshStandardMaterial({color:0xaebac8,metalness:.8}));hammer.position.set(1.2,.7,.2);g.add(hammer)}
+      const c=document.createElement('canvas');c.width=512;c.height=96;const cx=c.getContext('2d');cx.fillStyle='rgba(5,12,24,.82)';cx.fillRect(0,0,512,96);cx.strokeStyle='#7fe9ff';cx.strokeRect(1,1,510,94);cx.fillStyle='#e8f8ff';cx.font='700 36px Manrope, sans-serif';cx.textAlign='center';cx.fillText(p.name,256,62);
+      const label=new THREE.Sprite(new THREE.SpriteMaterial({map:new THREE.CanvasTexture(c),transparent:true,depthWrite:false}));label.scale.set(12,2.25,1);label.position.y=5;g.add(label);
+      scene.add(g);r={group:g,target:new THREE.Vector3()};remotePlayers.set(p.id,r);
+    }
+    r.target.set(p.x,p.y,Number.isFinite(p.z)?p.z:P.z);r.blocking=p.blocking;
+  });
+}
+function showOnlineEnding(defeated){
+  onlineStarted=false;onlineMode=false;state='ending';$('roomBadge').style.display='none';if(onlineSocket&&onlineSocket.readyState<2)onlineSocket.close();clearRemotePlayers();localPlayerId=null;onlineRoomState=null;hideSetupUi();$('mpPanel').style.display='none';$('t').textContent='CO-OP CAMPAIGN COMPLETE';$('m').textContent='The team defeated '+defeated.length+' bosses. Earth is safe.';$('go').textContent='PLAY AGAIN';$('backMenu').style.display='inline-block';$('ov').style.display='flex';
+}
+function showOnlineDefeat(){onlineStarted=false;onlineMode=false;state='over';$('roomBadge').style.display='none';if(onlineSocket&&onlineSocket.readyState<2)onlineSocket.close();clearRemotePlayers();localPlayerId=null;hideSetupUi();$('t').textContent='TEAM DOWN';$('m').textContent='Every operative is down. The campaign ended after '+(onlineRoomState?.defeated.length||0)+' boss victories.';$('go').textContent='PLAY AGAIN';$('backMenu').style.display='inline-block';$('ov').style.display='flex'}
+function handleOnlineState(s){
+  onlineRoomState=s;$('roomCode').textContent=s.code||'';
+  if($('mpPanel').style.display!=='none'){
+    $('netPlayers').innerHTML=s.players.map(p=>`<li class="netPlayer">${p.name.replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))} · ${HEROES.find(h=>h.id===p.hero)?.name||p.hero} · ${p.ready?'READY':'NOT READY'}${p.id===s.hostId?' · HOST':''}</li>`).join('');
+    $('netStatus').textContent=s.started?`Connected · mission ${Math.min(s.mission+1,5)} of 5 · ${s.players.length}/3 players`:`Lobby · ${s.players.length}/3 players`;
+    $('startRoom').disabled=localPlayerId!==s.hostId||s.players.some(p=>!p.ready)||s.started;
+    $('readyRoom').disabled=s.started;$('createRoom').disabled=s.started;$('joinRoom').disabled=s.started;
+    $('readyRoom').textContent=s.players.find(p=>p.id===localPlayerId)?.ready?'CANCEL READY':'READY';
+  }
+  drawRemotePlayers(s.players);
+  if(!s.started)return;
+  const recovering=state==='down';
+  const enteringGame=!onlineStarted;
+  if(enteringGame){P.set(0,heroType==='iron'?18:5.5,0);vx=vy=0;dist=0;kills=0;foes.concat(bolts,eb).forEach(o=>scene.remove(o));foes.length=bolts.length=eb.length=0;if(boss)scene.remove(boss.m);boss=null}
+  onlineMode=true;
+  if(s.finished){defeatedBosses=s.defeated.slice();if(s.failed)showOnlineDefeat();else showOnlineEnding(s.defeated);return}
+  onlineStarted=true;bossLv=s.mission;defeatedBosses=s.defeated.slice();
+  $('roomBadge').textContent='CO-OP · '+s.code;$('roomBadge').style.display='block';
+  if(!boss||boss.T.n!==s.boss.name){if(boss)scene.remove(boss.m);boss=null;bolts.forEach(o=>scene.remove(o));bolts.length=0;const model={...BOSS_ROSTERS[s.campaignHero][s.mission],hp:s.boss.maxHp};state='play';spawnBoss(model)}
+  if(boss){boss.hp=s.boss.hp;boss.max=s.boss.maxHp;$('bhp').style.width=Math.max(0,100*boss.hp/boss.max)+'%'}
+  if(enteringGame){state='play';$('mpPanel').style.display='none';$('ov').style.display='none'}
+  const me=s.players.find(p=>p.id===localPlayerId);
+  if(me&&me.hp<=0&&state==='play'){state='down';$('t').textContent='OPERATIVE DOWN';$('m').textContent='The team is still fighting. You will recover when the next mission begins.';$('go').textContent='WAIT FOR TEAM';hideSetupUi();$('ov').style.display='flex'}
+  else if(me&&me.hp>0&&(state==='down'||recovering)){$('ov').style.display='none';state='play'}
+  $('kl').textContent='BOSSES '+s.defeated.length+'/5';
+}
+function connectRoom(action){
+  if(onlineSocket&&onlineSocket.readyState<2){$('netStatus').textContent='A room connection is already open.';return}
+  const enteredEndpoint=$('wsUrl').value.trim();
+  if(!enteredEndpoint&&location.protocol==='file:'){$('netStatus').textContent='Open the published game website first, or enter your hosted server address.';return}
+  const endpoint=enteredEndpoint||(location.protocol==='https:'?'wss:':'ws:')+'//'+location.host,pin=$('mpPin').value.trim();$('wsUrl').value=endpoint;
+  if(!/^wss?:\/\//i.test(endpoint)){ $('netStatus').textContent='Enter a ws:// or wss:// WebSocket server address.';return }
+  if(!/^\d{4}$/.test(pin)){ $('netStatus').textContent='The access code must be four digits.';return }
+  pilotName=$('pilotInput').value.trim().slice(0,18)||'Avenger';$('pilotTag').textContent=pilotName.toUpperCase();
+  netErrorMessage='';onlineRoomState=null;$('netStatus').textContent='Connecting to room server…';
+  try{onlineSocket=new WebSocket(endpoint)}catch(e){$('netStatus').textContent='Could not open a connection: '+e.message;return}
+  onlineSocket.addEventListener('open',()=>{
+    const packet={type:action,pin,name:pilotName,hero:heroType};
+    if(action==='join')packet.code=$('joinCode').value.trim();
+    netSend(packet);$('netStatus').textContent='Connected · requesting room…';
+  });
+  onlineSocket.addEventListener('message',event=>{
+    let packet;try{packet=JSON.parse(event.data)}catch{return}
+    if(packet.type==='room_created'||packet.type==='joined'){localPlayerId=packet.playerId;onlineMode=true;onlineStarted=false;handleOnlineState(packet.state);$('roomCode').textContent=packet.state.code;$('netHero').value=heroType}
+    else if(packet.type==='state')handleOnlineState(packet.state);
+    else if(packet.type==='error'){netErrorMessage=packet.message;$('netStatus').textContent=packet.message;onlineSocket.close()}
+    else if(packet.type==='boss_attack'){$('warn').textContent='INCOMING · '+packet.warning;$('warn').style.display='block';setTimeout(()=>$('warn').style.display='none',850)}
+    else if(packet.type==='campaign_complete')showOnlineEnding(packet.defeated);
+    else if(packet.type==='mission_complete'){$('netStatus').textContent='Boss defeated · advancing to the next mission…'}
+    else if(packet.type==='campaign_failed')showOnlineDefeat();
+    else if(packet.type==='room_closed'||packet.type==='host_left'){$('netStatus').textContent=packet.message;onlineStarted=false;onlineMode=false;state='menu';$('roomBadge').style.display='none';$('mpPanel').style.display='grid';$('ov').style.display='flex'}
+  });
+  onlineSocket.addEventListener('close',()=>{if(onlineStarted){onlineStarted=false;onlineMode=false;state='menu';$('roomBadge').style.display='none';hideSetupUi();$('t').textContent='CONNECTION LOST';$('m').textContent='The co-op room disconnected. Return to the lobby or restart a solo campaign.';$('go').textContent='RETURN';$('backMenu').style.display='inline-block';$('ov').style.display='flex';$('mpPanel').style.display='grid'}$('netStatus').textContent=netErrorMessage||'Disconnected from room server.'});
+  onlineSocket.addEventListener('error',()=>{$('netStatus').textContent='Could not reach that server. Check the address and that the server is running.'});
+}
+$('online').onclick=()=>{$('ov').style.display='none';$('mpPanel').style.display='grid'};
+$('closeMp').onclick=()=>{if(onlineStarted){$('mpPanel').style.display='none';return}showMainMenu()};
+$('roomBadge').onclick=()=>{$('mpPanel').style.display='grid';$('netStatus').textContent='Connected · '+(onlineRoomState?.players.length||1)+'/3 players'};
+$('createRoom').onclick=()=>connectRoom('create');$('joinRoom').onclick=()=>connectRoom('join');
+$('readyRoom').onclick=()=>netSend({type:'ready',ready:!onlineRoomState?.players.find(p=>p.id===localPlayerId)?.ready});
+$('startRoom').onclick=()=>netSend({type:'start'});
+$('endRoom').onclick=()=>netSend({type:'end_room'});
+$('netHero').onchange=()=>{setHero($('netHero').value);netSend({type:'select',hero:heroType})};
+$('copyInvite').onclick=async()=>{if(!onlineRoomState?.code)return;try{const u=new URL(location.href);u.searchParams.set('room',onlineRoomState.code);u.searchParams.set('ws',$('wsUrl').value.trim());await navigator.clipboard.writeText(u.toString());$('netStatus').textContent='Invitation link copied.'}catch{$('netStatus').textContent='Copy unavailable. Share room code '+onlineRoomState.code+' and the server address.'}};
+try{const q=new URLSearchParams(location.search);if(q.get('room'))$('joinCode').value=q.get('room');if(q.get('ws'))$('wsUrl').value=q.get('ws')}catch{}
+
+// Input
+addEventListener('keydown',e=>{if($('mpPanel').style.display!=='none')return;keys[e.key.toLowerCase()]=1;if(e.key===' ')e.preventDefault();if(e.key>='1'&&e.key<='5')use(+e.key-1)});
+addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=0});
+const st=$('stick'),kn=$('knob');
+function mv(e){
+  const r=st.getBoundingClientRect(),R=r.width/2;
+  let dx=e.clientX-(r.left+R),dy=e.clientY-(r.top+R);
+  const L=Math.hypot(dx,dy),k=L>R*.8?R*.8/L:1;dx*=k;dy*=k;
+  kn.style.transform=`translate(${dx}px,${dy}px)`;sx=dx/(R*.8);sy=-dy/(R*.8);
+}
+st.onpointerdown=e=>{st.setPointerCapture(e.pointerId);mv(e)};
+st.onpointermove=e=>{if(st.hasPointerCapture(e.pointerId))mv(e)};
+st.onpointerup=st.onpointercancel=()=>{sx=sy=0;kn.style.transform=''};
+const fb=$('fire');
+fb.onpointerdown=e=>{fb.setPointerCapture(e.pointerId);firing=true};
+fb.onpointerup=fb.onpointercancel=()=>firing=false;
+ab.forEach((b,i)=>b.onpointerdown=e=>{e.preventDefault();use(i)});
+
+// Loop
+const clock=new THREE.Clock();
+function loop(){
+  requestAnimationFrame(loop);
+  const dt=Math.min(clock.getDelta(),.05);
+  if(state==='play'&&!(onlineMode&&onlineStarted&&$('mpPanel').style.display!=='none')){
+      const kx=(keys.arrowright||keys.d?1:0)-(keys.arrowleft||keys.a?1:0),ky=(keys.arrowup||keys.w?1:0)-(keys.arrowdown||keys.s?1:0);
+      const k=Math.min(1,7*dt);
+    const grounded=heroType!=='iron',heroSpeed=heroType==='cap'?.82:heroType==='thor'?1.08:1,boost=(!grounded&&(keys.shift||keys['shift']))?1.55:1;
+    vx+=((sx||kx)*32*SU.st*heroSpeed-vx)*k;vy+=((grounded?0:(sy||ky)*26*SU.st*heroSpeed)-vy)*k;
+    P.x=Math.max(-22,Math.min(22,P.x+vx*dt));if(grounded){P.y=5.5;P.z-=((sy||ky)*14*dt)}else P.y=Math.max(3,Math.min(48,P.y+vy*dt));
+    spd=(45+Math.min(30,kills*.6))*boost;P.z-=spd*dt;dist+=spd*dt;
+    cd-=dt;if((firing||keys[' '])&&cd<=0){fire();cd=heroType==='cap'?.52:heroType==='thor'?.32:SU.rate}
+    for(let j=0;j<5;j++){cds[j]=Math.max(0,cds[j]-dt);ab[j].style.setProperty('--r',cds[j]/CDM[j])}
+    shT=Math.max(0,shT-dt);shield.visible=shT>0||onlineBlocking;shield.rotation.y+=dt*2;
+    healT=Math.max(0,healT-dt);healCd=Math.max(0,healCd-dt);$('healcd').textContent=healCd>0?'HEAL · '+healCd.toFixed(1)+'s':'HEAL READY · +30 HP';$('healcd').style.color=healCd>0?'#ffd479':'#baffd5';
+    nanos.visible=healT>0;
+    if(healT>0){nbA.forEach((n,q)=>{n.a+=n.s*dt;nbP[q*3]=Math.cos(n.a)*n.r;nbP[q*3+1]=n.y+Math.sin(n.a*2)*.4;nbP[q*3+2]=Math.sin(n.a)*n.r*1.6});nbG.attributes.position.needsUpdate=true}
+    if(bm>0){bm-=dt;beam.position.set(P.x,P.y,P.z-150);
+      for(let j=foes.length-1;j>=0;j--){const f=foes[j];if(f.position.z<P.z&&Math.abs(f.position.x-P.x)<5&&Math.abs(f.position.y-P.y)<5){boom(f.position,0xffffff,1.2);scene.remove(f);foes.splice(j,1);kills++}}
+      for(let j=eb.length-1;j>=0;j--){const o=eb[j];if(Math.abs(o.position.x-P.x)<5&&Math.abs(o.position.y-P.y)<5){scene.remove(o);eb.splice(j,1)}}
+      if(!onlineMode&&heroType!=='cap'&&boss&&Math.abs(boss.m.position.x-P.x)<9&&Math.abs(boss.m.position.y-P.y)<9){boss.hp-=(heroType==='thor'?72:45)*dt;if(boss.hp<=0)killBoss()}}
+    beam.visible=bm>0;
+    if(onlineMode&&onlineStarted&&performance.now()-lastMoveSend>50){netSend({type:'move',x:P.x,y:P.y,z:P.z});lastMoveSend=performance.now()}
+    if(!onlineMode&&state==='play'&&!boss&&kills>=nextBoss)spawnBoss();
+    if(!onlineMode&&state==='play'){spawnT-=dt;if(spawnT<=0){spawn();spawnT=boss?2.8:Math.max(.45,1.5-kills*.02)}}
+    for(let i=bolts.length-1;i>=0;i--){
+      const b=bolts[i],u=b.userData;
+      if(u.m&&u.tgt&&u.tgt.parent){_w.copy(u.tgt.position).sub(b.position).normalize().multiplyScalar(spd+120);u.v.lerp(_w,Math.min(1,3*dt))}
+      b.position.addScaledVector(u.v,dt);
+      let dead=b.position.z<P.z-300;
+      if(boss&&b.position.distanceTo(boss.m.position)<9){dead=true;boom(b.position,0x9ff3ff,.6);if(!onlineMode){boss.hp-=b.userData.d;if(boss.hp<=0)killBoss()}}
+      for(let j=foes.length-1;j>=0&&!dead;j--){
+        const f=foes[j];
+        if(b.position.distanceTo(f.position)<2.8){boom(f.position,0xffb04a,1);scene.remove(f);foes.splice(j,1);kills++;dead=true}
+      }
+      if(dead){scene.remove(b);bolts.splice(i,1)}
+    }
+    for(let i=foes.length-1;i>=0;i--){
+      const f=foes[i],d=P.clone().sub(f.position),L=d.length();
+      f.position.addScaledVector(d,(24+Math.min(20,kills*.5))/L*dt);
+      f.rotation.z=Math.sin(performance.now()/380+f.position.x)*.18;
+      if(L<3.4){hurt(20);boom(f.position,0xff3040,1.4);scene.remove(f);foes.splice(i,1)}
+      else if(f.position.z>P.z+14){scene.remove(f);foes.splice(i,1)}
+    }
+    if(boss){
+      const m=boss.m;boss.t+=dt;
+      if(!onlineMode){boss.chargeAt-=dt;if(boss.chargeAt<=0&&boss.chargeLeft<=0){boss.chargeLeft=1.9;boss.chargeHit=false;boss.chargeAt=Math.max(7,boss.T.rate*5);$('warn').textContent='DANGER · '+boss.T.n+' IS CHARGING';$('warn').style.display='block';setTimeout(()=>{$('warn').style.display='none'},1100)}}
+      if(boss.chargeLeft>0){boss.chargeLeft=Math.max(0,boss.chargeLeft-dt);m.position.z+=(P.z-18-m.position.z)*Math.min(1,3.8*dt)}else m.position.z+=(P.z-130-m.position.z)*Math.min(1,2*dt);
+      const q=boss.T.spd;m.position.x=Math.sin(boss.t*.7*q)*16;m.position.y=bossGrounded()?8+Math.sin(boss.t*1.1*q)*2:24+Math.sin(boss.t*1.1*q)*9;
+      if(boss.chargeLeft>0&&!boss.chargeHit&&m.position.distanceTo(P)<10){boss.chargeHit=true;hurt(boss.T.dmg*1.4);boom(P,0xff8794,1.8)}
+      boss.sp.forEach(a=>a[0].rotation[a[1]]+=dt*a[2]);
+      if(!onlineMode){boss.ft-=dt;if(boss.ft<=0&&m.position.z>P.z-190){boss.ft=Math.max(.45,boss.T.rate-bossLv*.06);eshoot(m.position)}}
+    }
+    for(let i=eb.length-1;i>=0;i--){
+      const b=eb[i];b.position.addScaledVector(b.userData.v,dt);
+      if(b.position.distanceTo(P)<2.6){hurt(b.userData.d||15);boom(b.position,0xff3040,1);scene.remove(b);eb.splice(i,1)}
+      else if(b.position.z>P.z+12){scene.remove(b);eb.splice(i,1)}
+    }
+    score=Math.floor(dist/10)+kills*100;
+    $('score').textContent=score;$('kl').textContent='BOSSES '+bossLv+'/'+bossRoster().length;
+    hp=Math.max(0,Math.min(maxHealth(),hp));$('hpn').textContent=Math.ceil(hp);rg.style.setProperty('--p',Math.max(0,hp/maxHealth()*100));rg.style.setProperty('--c',healT>0?'#7dffb0':(hp<maxHealth()*.35?'#ff4a5a':'#7fe9ff'));
+    if(boss)$('bhp').style.width=Math.max(0,Math.min(100,boss.hp/boss.max*100))+'%';
+    if(hp<=0)over();
+  }
+  bl.forEach(b=>{if(b.position.z>P.z+45)b.position.z-=ROWS*GAP});
+  gnd.position.z=P.z;grid.position.z=Math.round(P.z/10)*10;stars.position.z=P.z;
+  for(const r of remotePlayers.values())r.group.position.lerp(r.target,1-Math.exp(-10*dt));
+  for(let i=fx.length-1;i>=0;i--){
+    const m=fx[i],u=m.userData;u.t+=dt;
+    m.scale.setScalar((3+u.t*40)*u.s);m.material.opacity=Math.max(0,1-u.t/.4);
+    if(u.t>.4){scene.remove(m);m.material.dispose();fx.splice(i,1)}
+  }
+  const k2=Math.min(1,8*dt);
+  hero.rotation.z+=(-vx*.03-hero.rotation.z)*k2;hero.rotation.x+=(vy*.012-hero.rotation.x)*k2;
+  const pn=state==='play';hero.rotation.y+=(0-hero.rotation.y)*k2;body.rotation.x+=((heroType==='iron'&&pn?-.08:0)-body.rotation.x)*k2;
+  flames.forEach(f=>{f.visible=heroType!=='cap';f.scale.set(1,.8+Math.random()*.6,1)});
+  let sh=0;if(shake>0){shake-=dt;sh=(Math.random()-.5)*shake*3}
+  cam.position.lerp(pn?_v.set(P.x*.75+sh,P.y+3.4+sh,P.z+11):_v.set(P.x,P.y+1,P.z+8),1-Math.exp(-7*dt));
+  cam.lookAt(pn?P.x*.5:P.x,pn?P.y+.6:P.y-2.4,pn?P.z-30:P.z);
+  ren.render(scene,cam);lock();
+}
+// Do not rewrite #m.textContent here: it contains the live #boostHint control.
+['gesturestart','gesturechange','gestureend','dblclick','contextmenu'].forEach(t=>document.addEventListener(t,e=>e.preventDefault()));
+document.addEventListener('touchmove',e=>e.preventDefault(),{passive:false});
+let lastTap=0;document.addEventListener('touchend',e=>{const n=Date.now();if(n-lastTap<350&&e.target.closest('canvas'))e.preventDefault();lastTap=n},{passive:false});
+const sd=$('suits');
+const heroPicker=$('heroes');let selectedSuit=0;
+function updateProgress(){try{const saved=JSON.parse(localStorage.getItem('avengers_protocol_'+heroType)||localStorage.getItem('aegis_'+heroType)||'null');$('progressInfo').textContent=saved?`LAST RECORD · ${saved.defeated.length}/5 BOSSES${saved.completed?' · CAMPAIGN COMPLETE':''}`:'NO CAMPAIGN RECORD YET'}catch{$('progressInfo').textContent=''}}
+function setHero(id){if(!HEROES.some(h=>h.id===id))return;heroType=id;selectedSuit=0;buildSuit(0);sd.style.display=heroType==='iron'?'flex':'none';if(state==='menu')$('m').innerHTML=`${HEROES.find(h=>h.id===heroType).desc}. Five missions. WASD to move · Space to attack · <b>1–5</b> abilities <span id="boostHint">· <b>Shift</b> to boost</span>.`;$('boostHint').style.display=heroType==='iron'?'inline':'none';[...heroPicker.children].forEach((c,k)=>c.classList.toggle('on',HEROES[k].id===heroType));ab[0].textContent=heroType==='cap'?'THROW':heroType==='thor'?'HAMMER':'MSL';ab[1].textContent=heroType==='cap'?'MELEE':heroType==='thor'?'BOLT':'BEAM';ab[2].textContent=heroType==='cap'?'BLOCK':heroType==='thor'?'STORM':'SHLD';ab[3].textContent=heroType==='cap'?'BASH':heroType==='thor'?'THUNDER':'NANO';ab[4].textContent=heroType==='cap'?'RALLY':heroType==='thor'?'VIGOR':'HEAL';if($('netHero'))$('netHero').value=heroType;updateProgress()}
+HEROES.forEach(h=>{const b=document.createElement('button');b.type='button';b.className='hero-pick'+(h.id===heroType?' on':'');b.dataset.hero=h.id;b.textContent=h.name;heroPicker.appendChild(b)});
+heroPicker.addEventListener('click',e=>{const button=e.target.closest('button[data-hero]');if(button)setHero(button.dataset.hero)});
+SUITS.forEach((s,i)=>{const b=document.createElement('button');b.className='sb'+(i?'':' on');b.textContent=s.n;b.onclick=()=>{selectedSuit=i;buildSuit(i);[...sd.children].forEach((c,k)=>c.classList.toggle('on',k===i))};sd.appendChild(b)});
+sd.style.display=heroType==='iron'?'flex':'none';
+setHero(heroType);
+updateProgress();
+loop();
+</script>
+</body>
+</html>

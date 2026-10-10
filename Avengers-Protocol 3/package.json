@@ -1,0 +1,13 @@
+{
+  "name": "avengers-protocol-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "WebSocket room server prototype for Avengers Protocol",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "ws": "^8.18.0"
+  }
+}

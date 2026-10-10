@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: avengers-protocol
+    runtime: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /healthz
+    envVars:
+      - key: AEGIS_ACCESS_CODE
+        value: "2043"
